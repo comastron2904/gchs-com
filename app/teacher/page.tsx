@@ -12,6 +12,7 @@ const EVENT_LABEL: Record<string, { text: string; color: string }> = {
   window_blur:   { text: '창 전환',     color: '#A32D2D' },
   window_focus:  { text: '창 복귀',     color: '#0F6E56' },
   blocked_site:  { text: '차단 사이트', color: '#7C1F1F' },
+  url_change:    { text: 'URL 변경',    color: '#7F3F00' },
   disconnected:  { text: '연결 끊김',   color: '#854F0B' },
 }
 
@@ -25,6 +26,8 @@ export default function TeacherPage() {
   const [blockedKeywords, setBlockedKeywords] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [elapsed, setElapsed] = useState(0)
+  // 선택된 PC (null = 전체)
+  const [selectedSeat, setSelectedSeat] = useState<number | null>(null)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
   const logsEndRef = useRef<HTMLDivElement>(null)
 
@@ -94,7 +97,7 @@ export default function TeacherPage() {
       .select('*')
       .eq('session_id', session.id)
       .order('created_at', { ascending: true })
-      .limit(200)
+      .limit(500)
     setLogs(data ?? [])
   }
 
@@ -133,6 +136,7 @@ export default function TeacherPage() {
     setSession(null)
     setConnections([])
     setLogs([])
+    setSelectedSeat(null)
   }
 
   function formatTime(s: number) {
@@ -146,8 +150,22 @@ export default function TeacherPage() {
     return new Date(iso).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
   }
 
+  function handlePcClick(seatNumber: number) {
+    // 같은 PC 다시 클릭하면 전체 보기로
+    setSelectedSeat(prev => prev === seatNumber ? null : seatNumber)
+  }
+
   const warningCount = connections.filter(c => c.status === 'warning').length
   const activeCount = connections.filter(c => c.status === 'active').length
+
+  // 로그 필터링: selectedSeat가 있으면 해당 학생 로그만
+  const filteredLogs = selectedSeat !== null
+    ? logs.filter(l => l.seat_number === selectedSeat)
+    : logs
+
+  const selectedConnection = selectedSeat !== null
+    ? connections.find(c => c.seat_number === selectedSeat)
+    : null
 
   if (loading) {
     return <div className={styles.loading}>불러오는 중...</div>
@@ -265,7 +283,14 @@ export default function TeacherPage() {
           <div className={styles.cols}>
             {/* PC 목록 */}
             <section className={styles.pcSection}>
-              <h3 className={styles.sectionTitle}>접속 PC 목록</h3>
+              <h3 className={styles.sectionTitle}>
+                접속 PC 목록
+                {selectedSeat !== null && (
+                  <button className={styles.filterClearBtn} onClick={() => setSelectedSeat(null)}>
+                    전체 보기 ×
+                  </button>
+                )}
+              </h3>
               {connections.length === 0 ? (
                 <div className={styles.emptyMsg}>아직 접속한 학생이 없습니다.<br/>학생이 사이트에 접속하면 자동으로 표시됩니다.</div>
               ) : (
@@ -277,7 +302,9 @@ export default function TeacherPage() {
                         c.status === 'warning' ? styles.pcWarning :
                         c.status === 'disconnected' ? styles.pcDisconnected :
                         c.is_focused ? styles.pcActive : styles.pcBlurred
-                      }`}
+                      } ${selectedSeat === c.seat_number ? styles.pcSelected : ''}`}
+                      onClick={() => handlePcClick(c.seat_number)}
+                      title={`${c.student_name || c.pc_label} 로그 보기`}
                     >
                       <div className={styles.pcNum}>{String(c.seat_number).padStart(2, '0')}</div>
                       <div className={styles.pcLabel}>{c.student_name || c.pc_label}</div>
@@ -297,13 +324,18 @@ export default function TeacherPage() {
             <section className={styles.logSection}>
               <h3 className={styles.sectionTitle}>
                 실시간 활동 로그
-                <span className={styles.logCount}>{logs.length}건</span>
+                {selectedSeat !== null && selectedConnection ? (
+                  <span className={styles.logFilterBadge}>
+                    {selectedConnection.student_name || selectedConnection.pc_label} · PC-{String(selectedSeat).padStart(2, '0')}
+                  </span>
+                ) : null}
+                <span className={styles.logCount}>{filteredLogs.length}건</span>
               </h3>
               <div className={styles.logList}>
-                {logs.length === 0 && (
+                {filteredLogs.length === 0 && (
                   <div className={styles.emptyMsg}>로그가 없습니다.</div>
                 )}
-                {logs.map(log => {
+                {filteredLogs.map(log => {
                   const ev = EVENT_LABEL[log.event_type] ?? { text: log.event_type, color: 'var(--text-2)' }
                   return (
                     <div key={log.id} className={styles.logRow}>
