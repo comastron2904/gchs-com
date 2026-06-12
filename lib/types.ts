@@ -23,6 +23,7 @@ export interface StudentConnection {
   session_id: string
   seat_number: number
   pc_label: string
+  student_name: string
   status: ConnectionStatus
   is_focused: boolean
   connected_at: string
