@@ -190,3 +190,25 @@
 }
 
 .pcSub { font-size: 10px; color: var(--text-3); margin-top: -4px; }
+
+/* PC 선택 필터 */
+.pcCard { cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+.pcCard:hover { box-shadow: 0 0 0 2px var(--border-strong); }
+.pcSelected { box-shadow: 0 0 0 2.5px #185FA5 !important; }
+
+.filterClearBtn {
+  margin-left: 8px;
+  padding: 2px 8px; border-radius: 20px;
+  border: 0.5px solid var(--border-strong);
+  background: var(--bg); color: var(--text-2);
+  font-size: 11px; cursor: pointer; font-weight: 400;
+}
+.filterClearBtn:hover { background: var(--red-bg); color: var(--red); }
+
+.logFilterBadge {
+  display: inline-flex; align-items: center;
+  padding: 2px 8px; border-radius: 20px;
+  background: #EFF6FF; color: #185FA5;
+  font-size: 11px; font-weight: 500;
+  border: 0.5px solid #BFDBFE;
+}
