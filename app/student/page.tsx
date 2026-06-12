@@ -10,7 +10,6 @@ export default function StudentPage() {
   const [session, setSession] = useState<ExamSession | null>(null)
   const [connection, setConnection] = useState<StudentConnection | null>(null)
   const [loading, setLoading] = useState(true)
-  // 이름 입력 단계
   const [nameInput, setNameInput] = useState('')
   const [nameSubmitted, setNameSubmitted] = useState(false)
   const [nameError, setNameError] = useState('')
@@ -27,8 +26,14 @@ export default function StudentPage() {
   const hiddenAtRef = useRef<number | null>(null)
   const examUrlRef = useRef<string>('')
 
+  // URL 추적을 위한 refs
+  const lastKnownUrlRef = useRef<string>('')
+  const urlPollRef = useRef<NodeJS.Timeout | null>(null)
+  const performanceObserverRef = useRef<PerformanceObserver | null>(null)
+
   useEffect(() => {
     examUrlRef.current = window.location.href
+    lastKnownUrlRef.current = window.location.href
     fetchSession()
   }, [])
 
@@ -109,11 +114,105 @@ export default function StudentPage() {
       })
       .subscribe()
 
+    // 이벤트 리스너 등록
     document.addEventListener('visibilitychange', handleVisibilityChange)
     window.addEventListener('blur', handleWindowBlur)
     window.addEventListener('focus', handleWindowFocus)
     window.addEventListener('beforeunload', handleBeforeUnload)
     document.addEventListener('keydown', handleKeyDown)
+
+    // ── URL 변경 감지 시작 ──
+    startUrlTracking()
+  }
+
+  // ────────────────────────────────────────────────
+  // URL 변경 감지: PerformanceObserver + popstate + 폴링
+  // ────────────────────────────────────────────────
+  function startUrlTracking() {
+    // 1) popstate (뒤로/앞으로 탐색)
+    window.addEventListener('popstate', handleUrlChange)
+
+    // 2) history.pushState / replaceState 패치
+    const origPush = history.pushState.bind(history)
+    const origReplace = history.replaceState.bind(history)
+
+    history.pushState = function(...args) {
+      origPush(...args)
+      handleUrlChange()
+    }
+    history.replaceState = function(...args) {
+      origReplace(...args)
+      handleUrlChange()
+    }
+
+    // 3) PerformanceObserver: navigation 항목으로 외부 사이트 이동 감지
+    try {
+      const po = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          const nav = entry as PerformanceNavigationTiming
+          if (nav.name && nav.name !== lastKnownUrlRef.current) {
+            handleExternalNavigation(nav.name)
+          }
+        }
+      })
+      po.observe({ type: 'navigation', buffered: true })
+      performanceObserverRef.current = po
+    } catch {
+      // PerformanceObserver 미지원 환경 무시
+    }
+
+    // 4) 폴링 백업: 500ms마다 현재 URL 체크
+    urlPollRef.current = setInterval(() => {
+      const current = window.location.href
+      if (current !== lastKnownUrlRef.current) {
+        handleUrlChange()
+      }
+    }, 500)
+  }
+
+  // 같은 출처(same-origin) URL 변경 처리
+  const handleUrlChange = useCallback(async () => {
+    const newUrl = window.location.href
+    const oldUrl = lastKnownUrlRef.current
+    if (newUrl === oldUrl) return
+    lastKnownUrlRef.current = newUrl
+
+    const keywords = sessionRef.current?.blocked_keywords ?? []
+    const matched = keywords.find(kw => newUrl.toLowerCase().includes(kw))
+
+    if (matched) {
+      setWarningMsg(`차단된 키워드가 포함된 주소입니다: "${matched}"\n이 행동은 교사에게 기록됩니다.`)
+      setShowWarning(true)
+      setWarningCount(prev => prev + 1)
+      await updateConnectionStatus('warning', false)
+      await logEvent('blocked_site', `차단 키워드 "${matched}" 포함 URL: ${newUrl}`)
+    } else {
+      const from = getDomain(oldUrl)
+      const to = getDomain(newUrl)
+      await logEvent('url_change', `${from} → ${to}`)
+    }
+  }, [])
+
+  // 외부 사이트(cross-origin) 탐색 처리
+  async function handleExternalNavigation(newUrl: string) {
+    const oldUrl = lastKnownUrlRef.current
+    if (newUrl === oldUrl) return
+    lastKnownUrlRef.current = newUrl
+
+    const keywords = sessionRef.current?.blocked_keywords ?? []
+    const matched = keywords.find(kw => newUrl.toLowerCase().includes(kw))
+
+    if (matched) {
+      setWarningMsg(`차단된 키워드가 포함된 주소입니다: "${matched}"\n이 행동은 교사에게 기록됩니다.`)
+      setShowWarning(true)
+      setWarningCount(prev => prev + 1)
+      await updateConnectionStatus('warning', false)
+      await logEvent('blocked_site', `차단 키워드 "${matched}" 포함 URL: ${getDomain(newUrl)}`)
+    } else {
+      const from = getDomain(oldUrl)
+      const to = getDomain(newUrl)
+      await logEvent('url_change', `${from} → ${to}`)
+    }
   }
 
   async function logEvent(eventType: string, detail?: string) {
@@ -145,13 +244,12 @@ export default function StudentPage() {
     try { return new URL(url).hostname } catch { return url || '알 수 없음' }
   }
 
+  // ── visibilitychange: 이탈/복귀는 로그만, 차단 키워드 URL이면 경고 ──
   const handleVisibilityChange = useCallback(async () => {
     if (document.hidden) {
       hiddenAtRef.current = Date.now()
-      setWarningMsg('다른 탭 또는 창으로 이동했습니다.\n시험 중에는 이 페이지를 유지해야 합니다.')
-      setShowWarning(true)
-      setWarningCount(prev => prev + 1)
-      await updateConnectionStatus('warning', false)
+      // 경고 없이 로그만 기록
+      await updateConnectionStatus('active', false)
       await logEvent('tab_hidden', `이탈: ${getDomain(examUrlRef.current)}`)
     } else {
       const returnedAt = Date.now()
@@ -160,32 +258,50 @@ export default function StudentPage() {
       const referrer = document.referrer || ''
       const durationStr = duration !== null ? ` (${duration}초 체류)` : ''
       const keywords = sessionRef.current?.blocked_keywords ?? []
-      const matched = keywords.length > 0 ? keywords.find(kw => referrer.toLowerCase().includes(kw)) : null
-      if (matched) {
+
+      // referrer 또는 현재 URL에 차단 키워드가 있을 때만 경고
+      const matchedRef = keywords.length > 0 && referrer
+        ? keywords.find(kw => referrer.toLowerCase().includes(kw))
+        : null
+      const currentUrl = window.location.href
+      const matchedCurrent = keywords.length > 0
+        ? keywords.find(kw => currentUrl.toLowerCase().includes(kw))
+        : null
+
+      if (matchedRef) {
         const detail = `차단 사이트 방문: ${getDomain(referrer)}${durationStr} → 시험화면 복귀`
-        setWarningMsg(`차단된 사이트를 방문했습니다: "${matched}"\n이 행동은 교사에게 기록됩니다.`)
+        setWarningMsg(`차단된 사이트를 방문했습니다: "${matchedRef}"\n이 행동은 교사에게 기록됩니다.`)
         setShowWarning(true)
         setWarningCount(prev => prev + 1)
         await updateConnectionStatus('warning', false)
         await logEvent('blocked_site', detail)
+      } else if (matchedCurrent) {
+        setWarningMsg(`차단된 키워드가 포함된 주소입니다: "${matchedCurrent}"\n이 행동은 교사에게 기록됩니다.`)
+        setShowWarning(true)
+        setWarningCount(prev => prev + 1)
+        await updateConnectionStatus('warning', false)
+        await logEvent('blocked_site', `차단 키워드 "${matchedCurrent}" 포함 URL: ${getDomain(currentUrl)}`)
       } else {
+        // 경고 없이 로그만 기록
         const from = referrer ? getDomain(referrer) : '알 수 없음'
         const to = getDomain(examUrlRef.current)
-        const detail = referrer ? `${from} → ${to}${durationStr}` : `탭 복귀 (이전 URL 확인 불가)${durationStr}`
+        const detail = referrer
+          ? `${from} → ${to}${durationStr}`
+          : `탭 복귀 (이전 URL 확인 불가)${durationStr}`
         setShowWarning(false)
         await updateConnectionStatus('active', true)
         await logEvent('tab_visible', detail)
       }
+
+      lastKnownUrlRef.current = window.location.href
     }
   }, [])
 
   const handleWindowBlur = useCallback(async () => {
     if (document.hidden) return
     hiddenAtRef.current = Date.now()
-    setWarningMsg('다른 창으로 전환되었습니다.\n시험 중에는 이 창을 유지해야 합니다.')
-    setShowWarning(true)
-    setWarningCount(prev => prev + 1)
-    await updateConnectionStatus('warning', false)
+    // 경고 없이 로그만 기록
+    await updateConnectionStatus('active', false)
     await logEvent('window_blur', `창 전환: ${getDomain(examUrlRef.current)} → 다른 창`)
   }, [])
 
@@ -194,9 +310,25 @@ export default function StudentPage() {
     const duration = hiddenAtRef.current ? Math.round((returnedAt - hiddenAtRef.current) / 1000) : null
     hiddenAtRef.current = null
     const durationStr = duration !== null ? ` (${duration}초 후 복귀)` : ''
-    setShowWarning(false)
-    await updateConnectionStatus('active', true)
-    await logEvent('window_focus', `창 복귀 → ${getDomain(examUrlRef.current)}${durationStr}`)
+
+    // 복귀 시점 URL에 차단 키워드가 있을 때만 경고
+    const currentUrl = window.location.href
+    const keywords = sessionRef.current?.blocked_keywords ?? []
+    const matched = keywords.find(kw => currentUrl.toLowerCase().includes(kw))
+
+    if (matched) {
+      setWarningMsg(`차단된 키워드가 포함된 주소입니다: "${matched}"\n이 행동은 교사에게 기록됩니다.`)
+      setShowWarning(true)
+      setWarningCount(prev => prev + 1)
+      await updateConnectionStatus('warning', false)
+      await logEvent('blocked_site', `차단 키워드 "${matched}" 포함 URL: ${getDomain(currentUrl)}`)
+    } else {
+      setShowWarning(false)
+      await updateConnectionStatus('active', true)
+      await logEvent('window_focus', `창 복귀 → ${getDomain(examUrlRef.current)}${durationStr}`)
+    }
+
+    lastKnownUrlRef.current = currentUrl
   }, [])
 
   const handleKeyDown = useCallback(async (e: KeyboardEvent) => {
@@ -229,8 +361,11 @@ export default function StudentPage() {
     window.removeEventListener('focus', handleWindowFocus)
     window.removeEventListener('beforeunload', handleBeforeUnload)
     document.removeEventListener('keydown', handleKeyDown)
+    window.removeEventListener('popstate', handleUrlChange)
     if (timerRef.current) clearInterval(timerRef.current)
     if (heartbeatRef.current) clearInterval(heartbeatRef.current)
+    if (urlPollRef.current) clearInterval(urlPollRef.current)
+    if (performanceObserverRef.current) performanceObserverRef.current.disconnect()
     if (connectionRef.current) {
       supabase
         .from('student_connections')
@@ -261,7 +396,6 @@ export default function StudentPage() {
     )
   }
 
-  // 이름 입력 화면
   if (!nameSubmitted) {
     return (
       <div className={styles.noSession}>
@@ -333,7 +467,7 @@ export default function StudentPage() {
           <div className={styles.statusIcon}>🟢</div>
           <h1 className={styles.statusTitle}>시험이 진행 중입니다</h1>
           <p className={styles.statusDesc}>
-            다른 탭이나 창으로 이동하면 교사에게 즉시 알림이 전송됩니다.
+            차단된 키워드가 포함된 사이트에 접속하면 교사에게 즉시 알림이 전송됩니다.
           </p>
           <div className={styles.infoRow}>
             <div className={styles.infoItem}>
