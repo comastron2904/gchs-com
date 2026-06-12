@@ -1,0 +1,115 @@
+.app { min-height: 100vh; display: flex; flex-direction: column; }
+
+.topbar {
+  height: 52px;
+  background: var(--surface);
+  border-bottom: 0.5px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.topLeft { display: flex; align-items: center; gap: 12px; }
+.siteName { font-size: 15px; font-weight: 600; color: var(--text); letter-spacing: -0.3px; }
+.siteSub { font-size: 12px; color: var(--text-3); }
+.topRight { display: flex; align-items: center; gap: 10px; }
+
+.badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 20px;
+  font-size: 12px; font-weight: 500;
+}
+.badgeIdle { background: #f0f0f0; color: var(--text-2); }
+.badgeActive { background: var(--green-bg); color: var(--green-text); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-3); }
+.dotActive { background: var(--green); animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+
+.btnOutline {
+  padding: 7px 14px; border-radius: var(--radius);
+  border: 0.5px solid var(--border-strong);
+  background: var(--surface); color: var(--text);
+  font-size: 13px; font-weight: 500;
+  transition: background 0.15s;
+}
+.btnOutline:hover { background: var(--bg); }
+
+.btnNavy {
+  padding: 7px 14px; border-radius: var(--radius);
+  border: none; background: var(--navy); color: #fff;
+  font-size: 13px; font-weight: 500; flex: 1;
+}
+.btnNavy:hover { background: #16213e; }
+
+.btnPrimary {
+  width: 100%; padding: 10px; border-radius: var(--radius);
+  border: none; background: var(--green); color: #fff;
+  font-size: 14px; font-weight: 500;
+}
+.btnPrimary:hover { background: var(--green-text); }
+
+.main {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 48px 20px;
+}
+
+.card {
+  width: 100%; max-width: 520px;
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.cardHeader {
+  padding: 28px 28px 20px;
+  border-bottom: 0.5px solid var(--border);
+  display: flex; align-items: center; gap: 16px;
+}
+.iconWrap {
+  width: 56px; height: 56px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+}
+.iconIdle { background: #f0f0f0; }
+.iconActive { background: var(--green-bg); }
+.cardTitleGroup { flex: 1; }
+.cardTitle { font-size: 20px; font-weight: 600; letter-spacing: -0.4px; margin-bottom: 4px; }
+.cardDesc { font-size: 13px; color: var(--text-2); line-height: 1.6; }
+
+.infoGrid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  padding: 20px 28px;
+}
+.infoCell { background: var(--bg); border-radius: var(--radius); padding: 12px 14px; }
+.infoLabel { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.infoValue { font-size: 14px; font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; }
+
+.hint { padding: 0 28px 20px; font-size: 13px; color: var(--text-3); text-align: center; }
+
+.clock { margin-top: 16px; font-size: 12px; color: var(--text-3); }
+
+/* 모달 */
+.modalBg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+}
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 0.5px solid var(--border);
+  padding: 28px;
+  width: 320px;
+}
+.modalTitle { font-size: 16px; font-weight: 600; margin-bottom: 18px; }
+.fieldGroup { margin-bottom: 12px; }
+.fieldLabel { display: block; font-size: 12px; color: var(--text-2); margin-bottom: 5px; }
+.errMsg { font-size: 12px; color: var(--red); margin: 8px 0; }
+.modalActions { display: flex; gap: 8px; margin-top: 18px; }
+.modalActions .btnOutline { flex: 1; }

@@ -1,0 +1,116 @@
+.app { min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
+.loading, .noSession {
+  display: flex; align-items: center; justify-content: center;
+  height: 100vh; color: var(--text-3);
+}
+.noSessionCard {
+  background: var(--surface); border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg); padding: 36px; text-align: center;
+  display: flex; flex-direction: column; gap: 12px; max-width: 360px;
+}
+.noSessionCard h2 { font-size: 18px; font-weight: 600; }
+.noSessionCard p { font-size: 14px; color: var(--text-2); }
+
+.btnOutline {
+  padding: 8px 16px; border-radius: var(--radius);
+  border: 0.5px solid var(--border-strong);
+  background: var(--surface); color: var(--text);
+  font-size: 13px; font-weight: 500; cursor: pointer; margin-top: 4px;
+}
+.btnOutline:hover { background: var(--bg); }
+
+/* 전체화면 이탈 오버레이 */
+.fsOverlay {
+  position: fixed; inset: 0; z-index: 10000;
+  background: rgba(26, 26, 46, 0.97);
+  display: flex; align-items: center; justify-content: center;
+}
+.fsBox {
+  background: var(--surface); border-radius: var(--radius-lg);
+  padding: 44px 40px; text-align: center;
+  max-width: 400px; width: 90%;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  border: 2px solid #F7C1C1;
+}
+.fsIcon { font-size: 52px; }
+.fsTitle { font-size: 22px; font-weight: 700; color: var(--navy); }
+.fsMsg { font-size: 14px; color: var(--text); line-height: 1.7; }
+.fsNote { font-size: 12px; color: var(--red); font-weight: 500; }
+
+/* 경고 오버레이 */
+.warningOverlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(163, 45, 45, 0.92);
+  display: flex; align-items: center; justify-content: center;
+}
+.warningBox {
+  background: var(--surface); border-radius: var(--radius-lg);
+  padding: 40px 36px; text-align: center;
+  max-width: 360px; width: 90%;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+.warningIcon { font-size: 48px; }
+.warningTitle { font-size: 24px; font-weight: 700; color: var(--red); }
+.warningMsg {
+  font-size: 14px; color: var(--text); line-height: 1.7;
+  white-space: pre-line;
+}
+.warningNote { font-size: 12px; color: var(--text-3); }
+.btnReturn {
+  margin-top: 8px; padding: 11px 24px; border-radius: var(--radius);
+  border: none; background: var(--red); color: #fff;
+  font-size: 14px; font-weight: 600; cursor: pointer; width: 100%;
+}
+.btnReturn:hover { background: #791F1F; }
+
+/* 상단 바 */
+.topbar {
+  height: 52px; background: var(--surface);
+  border-bottom: 0.5px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 24px;
+}
+.topLeft { display: flex; align-items: center; gap: 12px; }
+.siteName { font-size: 15px; font-weight: 600; }
+.siteSub { font-size: 12px; color: var(--text-3); }
+.topRight { display: flex; align-items: center; gap: 8px; }
+
+.seatBadge {
+  padding: 4px 10px; border-radius: 20px;
+  background: var(--blue-bg); color: var(--blue-text);
+  font-size: 12px; font-weight: 600;
+}
+.timerBadge {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 14px; font-weight: 600;
+  background: var(--bg); padding: 4px 10px;
+  border-radius: var(--radius); border: 0.5px solid var(--border-strong);
+}
+.warnBadge {
+  padding: 4px 10px; border-radius: 20px;
+  background: var(--red-bg); color: var(--red-text);
+  font-size: 12px; font-weight: 600;
+}
+
+/* 메인 */
+.main {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 40px 20px;
+}
+.statusCard {
+  background: var(--surface); border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg); padding: 36px;
+  text-align: center; max-width: 480px; width: 100%;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+.statusIcon { font-size: 48px; }
+.statusTitle { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; }
+.statusDesc { font-size: 14px; color: var(--text-2); line-height: 1.7; max-width: 320px; }
+
+.infoRow { display: flex; gap: 24px; margin-top: 8px; }
+.infoItem { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.infoLabel { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; }
+.infoVal { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.notice { margin-top: 16px; font-size: 12px; color: var(--text-3); }

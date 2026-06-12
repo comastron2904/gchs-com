@@ -1,0 +1,58 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f5f5;
+  --surface: #ffffff;
+  --border: rgba(0,0,0,0.1);
+  --border-strong: rgba(0,0,0,0.2);
+  --text: #111;
+  --text-2: #555;
+  --text-3: #999;
+  --green: #0F6E56;
+  --green-bg: #E1F5EE;
+  --green-text: #085041;
+  --red: #A32D2D;
+  --red-bg: #FCEBEB;
+  --red-text: #501313;
+  --amber: #854F0B;
+  --amber-bg: #FAEEDA;
+  --amber-text: #412402;
+  --blue: #185FA5;
+  --blue-bg: #E6F1FB;
+  --blue-text: #042C53;
+  --navy: #1a1a2e;
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+input, button, select, textarea {
+  font-family: inherit;
+  font-size: 14px;
+}
+
+input[type="text"],
+input[type="password"] {
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  border: 0.5px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+}
+input:focus { border-color: var(--navy); box-shadow: 0 0 0 2px rgba(26,26,46,0.12); }
+
+button { cursor: pointer; }
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
