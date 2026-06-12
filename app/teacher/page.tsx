@@ -6,12 +6,13 @@ import type { ExamSession, StudentConnection, ActivityLog } from '@/lib/types'
 import styles from './teacher.module.css'
 
 const EVENT_LABEL: Record<string, { text: string; color: string }> = {
-  connected:     { text: '접속',       color: '#185FA5' },
-  tab_hidden:    { text: '탭 숨김',    color: '#A32D2D' },
-  tab_visible:   { text: '탭 복귀',    color: '#0F6E56' },
-  window_blur:   { text: '창 전환',    color: '#A32D2D' },
-  window_focus:  { text: '창 복귀',    color: '#0F6E56' },
-  disconnected:  { text: '연결 끊김',  color: '#854F0B' },
+  connected:     { text: '접속',        color: '#185FA5' },
+  tab_hidden:    { text: '탭 이탈',     color: '#A32D2D' },
+  tab_visible:   { text: '탭 복귀',     color: '#0F6E56' },
+  window_blur:   { text: '창 전환',     color: '#A32D2D' },
+  window_focus:  { text: '창 복귀',     color: '#0F6E56' },
+  blocked_site:  { text: '차단 사이트', color: '#7C1F1F' },
+  disconnected:  { text: '연결 끊김',   color: '#854F0B' },
 }
 
 export default function TeacherPage() {
@@ -279,7 +280,8 @@ export default function TeacherPage() {
                       }`}
                     >
                       <div className={styles.pcNum}>{String(c.seat_number).padStart(2, '0')}</div>
-                      <div className={styles.pcLabel}>{c.pc_label}</div>
+                      <div className={styles.pcLabel}>{c.student_name || c.pc_label}</div>
+                      <div className={styles.pcSub}>{c.pc_label}</div>
                       <div className={styles.pcStatus}>
                         {c.status === 'warning' ? '⚠ 경고' :
                          c.status === 'disconnected' ? '연결 끊김' :
