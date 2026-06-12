@@ -245,9 +245,6 @@ export default function StudentPage() {
     try { return new URL(url).hostname } catch { return url || '알 수 없음' }
   }
 
-  // blur/focus 이벤트가 visibilitychange와 동시에 오는 경우 중복 방지용 플래그
-  const visibilityJustFiredRef = useRef(false)
-
   // ── visibilitychange: 탭 전환 감지 ──
   const handleVisibilityChange = useCallback(async () => {
     visibilityJustFiredRef.current = true
