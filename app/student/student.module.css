@@ -114,3 +114,33 @@
 .infoVal { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
 
 .notice { margin-top: 16px; font-size: 12px; color: var(--text-3); }
+
+/* 이름 입력 화면 */
+.joinCard {
+  background: var(--surface); border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg); width: 100%; max-width: 360px;
+  overflow: hidden;
+}
+.joinHeader {
+  background: var(--navy, #1a1a2e); padding: 24px 28px 20px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.joinSubject { font-size: 12px; color: rgba(255,255,255,0.55); letter-spacing: 0.5px; }
+.joinTitle { font-size: 20px; font-weight: 600; color: #fff; }
+.joinBody { padding: 24px 28px; display: flex; flex-direction: column; gap: 12px; }
+.joinLabel { font-size: 12px; color: var(--text-2); }
+.joinInput {
+  width: 100%; padding: 10px 12px; border-radius: var(--radius);
+  border: 0.5px solid var(--border-strong);
+  background: var(--bg); color: var(--text);
+  font-size: 15px; box-sizing: border-box;
+}
+.joinInput:focus { outline: none; border-color: var(--navy, #1a1a2e); }
+.joinError { font-size: 12px; color: var(--red); margin: -4px 0; }
+.joinBtn {
+  width: 100%; padding: 11px; border-radius: var(--radius);
+  border: none; background: var(--navy, #1a1a2e); color: #fff;
+  font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 4px;
+}
+.joinBtn:hover:not(:disabled) { opacity: 0.88; }
+.joinBtn:disabled { opacity: 0.4; cursor: not-allowed; }
