@@ -6,6 +6,8 @@ export type EventType =
   | 'tab_visible'
   | 'window_blur'
   | 'window_focus'
+  | 'blocked_site'
+  | 'url_change'
   | 'disconnected'
 
 export interface ExamSession {
