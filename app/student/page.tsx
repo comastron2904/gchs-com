@@ -28,6 +28,7 @@ export default function StudentPage() {
 
   // URL 추적을 위한 refs
   const lastKnownUrlRef = useRef<string>('')
+  const visibilityJustFiredRef = useRef(false)
   const urlPollRef = useRef<NodeJS.Timeout | null>(null)
   const performanceObserverRef = useRef<PerformanceObserver | null>(null)
 
@@ -244,13 +245,18 @@ export default function StudentPage() {
     try { return new URL(url).hostname } catch { return url || '알 수 없음' }
   }
 
-  // ── visibilitychange: 이탈/복귀는 로그만, 차단 키워드 URL이면 경고 ──
+  // blur/focus 이벤트가 visibilitychange와 동시에 오는 경우 중복 방지용 플래그
+  const visibilityJustFiredRef = useRef(false)
+
+  // ── visibilitychange: 탭 전환 감지 ──
   const handleVisibilityChange = useCallback(async () => {
+    visibilityJustFiredRef.current = true
+    setTimeout(() => { visibilityJustFiredRef.current = false }, 100)
+
     if (document.hidden) {
       hiddenAtRef.current = Date.now()
-      // 경고 없이 로그만 기록
       await updateConnectionStatus('active', false)
-      await logEvent('tab_hidden', `이탈: ${getDomain(examUrlRef.current)}`)
+      await logEvent('tab_hidden', `탭 이탈: ${getDomain(examUrlRef.current)}`)
     } else {
       const returnedAt = Date.now()
       const duration = hiddenAtRef.current ? Math.round((returnedAt - hiddenAtRef.current) / 1000) : null
@@ -259,7 +265,6 @@ export default function StudentPage() {
       const durationStr = duration !== null ? ` (${duration}초 체류)` : ''
       const keywords = sessionRef.current?.blocked_keywords ?? []
 
-      // referrer 또는 현재 URL에 차단 키워드가 있을 때만 경고
       const matchedRef = keywords.length > 0 && referrer
         ? keywords.find(kw => referrer.toLowerCase().includes(kw))
         : null
@@ -282,12 +287,11 @@ export default function StudentPage() {
         await updateConnectionStatus('warning', false)
         await logEvent('blocked_site', `차단 키워드 "${matchedCurrent}" 포함 URL: ${getDomain(currentUrl)}`)
       } else {
-        // 경고 없이 로그만 기록
         const from = referrer ? getDomain(referrer) : '알 수 없음'
         const to = getDomain(examUrlRef.current)
         const detail = referrer
-          ? `${from} → ${to}${durationStr}`
-          : `탭 복귀 (이전 URL 확인 불가)${durationStr}`
+          ? `탭 복귀: ${from} → ${to}${durationStr}`
+          : `탭 복귀${durationStr}`
         setShowWarning(false)
         await updateConnectionStatus('active', true)
         await logEvent('tab_visible', detail)
@@ -297,21 +301,24 @@ export default function StudentPage() {
     }
   }, [])
 
+  // ── window blur: 다른 앱/창으로 전환 감지 ──
   const handleWindowBlur = useCallback(async () => {
+    // visibilitychange와 동시에 발생한 경우 중복 방지
+    if (visibilityJustFiredRef.current) return
     if (document.hidden) return
     hiddenAtRef.current = Date.now()
-    // 경고 없이 로그만 기록
     await updateConnectionStatus('active', false)
     await logEvent('window_blur', `창 전환: ${getDomain(examUrlRef.current)} → 다른 창`)
   }, [])
 
+  // ── window focus: 창 복귀 감지 ──
   const handleWindowFocus = useCallback(async () => {
+    if (visibilityJustFiredRef.current) return
     const returnedAt = Date.now()
     const duration = hiddenAtRef.current ? Math.round((returnedAt - hiddenAtRef.current) / 1000) : null
     hiddenAtRef.current = null
     const durationStr = duration !== null ? ` (${duration}초 후 복귀)` : ''
 
-    // 복귀 시점 URL에 차단 키워드가 있을 때만 경고
     const currentUrl = window.location.href
     const keywords = sessionRef.current?.blocked_keywords ?? []
     const matched = keywords.find(kw => currentUrl.toLowerCase().includes(kw))
@@ -325,7 +332,7 @@ export default function StudentPage() {
     } else {
       setShowWarning(false)
       await updateConnectionStatus('active', true)
-      await logEvent('window_focus', `창 복귀 → ${getDomain(examUrlRef.current)}${durationStr}`)
+      await logEvent('window_focus', `창 복귀: → ${getDomain(examUrlRef.current)}${durationStr}`)
     }
 
     lastKnownUrlRef.current = currentUrl
